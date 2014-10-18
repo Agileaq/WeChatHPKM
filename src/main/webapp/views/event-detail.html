@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Technology Day</title>
+<link href="common.css" rel="stylesheet">
+</head>
+<body>
+<div id="sys-msg"></div>
+<div>
+	<div>
+		<div style="float:right;"><span id="email"></span></div>
+		<h1 id="eventName" style="clear:both;">XXXXX Tech Day</h1>
+		<h5>
+			<span>Location: <span id="eventLocation"></span>Location</span><br/>
+			<span>Presenter: <span id="presenter"></span>Presenter</span></h5>
+		<p id="eventDescription"></p>
+	</div>
+	<button id="survey" class="full hidden">Survey</button>
+	<div class="schedule-info">
+		<h3>Schedule List</h3>
+		<div id="event-schedule"></div>
+		<div id="event-schedule-template" style="display:none;">
+			<div class="scheduleItem" id="scheduleItem{id}" data-endTime="{endTime}">
+				<h4><span>{scheduleTime}</span><span class="status default"><button onclick="checkIn('{id}')">Check In</button></span></h4>
+				<ol class="schedule-locations">
+					<li><a href="agenda.html?eventId={eventId}&location={location}">{location}</a></li>
+				</ol>
+			</div>
+		</div>
+	</div>
+</div>
+<script src="jquery-1.11.1.min.js"></script>
+<script src="common.js"></script>
+<script>
+	var activity={id: getParameter('eventId')};
+	var checkInRecords;
+	var openUserID=getParameter('openUserID');
+	if(!openUserID){
+		alert('Please use wechat to visit this page.');
+	}
+	if(!activity.id){
+		alert('This activity may not exists');
+	}
+	function loadUserInfo(){
+		$.ajax({
+			url:  '../service/event/checkins?eventId='+activity.id+'&openUserID='+openUserID,
+	        type: 'GET',	
+	        success: function (json) {
+	        	json && json.data && $("#email").html(json.data);
+	        }
+		});
+	}
+	function loadCheckInRecords(){
+		$.ajax({
+			url:  '../service/event/checkins?eventId='+activity.id+'&openUserID='+openUserID,
+	        type: 'GET',	
+	        success: function (json) {
+	        	var currentTime=new Date().getTime();
+        		var scheduleItemList=$(".scheduleItem");
+        		var occursInPast=0;
+        		for(var i=0;i<scheduleItemList.length;i++){
+        			var schedule=scheduleItemList[i];
+        			var scheduleId=schedule.id;
+        			var itemEndTime=parseFloat($(schedule).attr("data-endTime"));
+        			
+        			if(currentTime>itemEndTime){
+        				occursInPast++;
+        				$(schedule).find('.status').removeClass('default').addClass('past').html('Not Checked');
+        			}
+        		}
+        		(occursInPast==scheduleItemList.length)&&$("#survey").show();
+        		
+	        	if(json && json.success && json.data){
+	        		checkInRecords=json.data;
+	        		for(var i=0;i<checkInRecords.length;i++){
+	        			var scheduleId=checkInRecords[i].eventScheduler.id;
+	        			$("#scheduleItem"+scheduleId).find(".status").removeClass('default').addClass('success').html('Checked');
+	        		}
+	        	}
+	        }
+		});
+	}
+	function checkIn(eventScheduleId){
+		$.ajax({
+			url:  '../service/checkin?eventScheduleId='+eventScheduleId+'&openUserID='+openUserID,
+	        type: 'GET',
+	        success: function (json) {
+	        	var errorCode=json.data;
+	        	if(errorCode===0){ //success
+	        		$("#eventScheduleId").finde(".status").removeClass('default').addClass('success').html('Checked');
+	        		showSysMessage('Check In Successfully.');
+	        	}else{
+	        		if(errorCode==1){ //no registration
+		        		showSysMessage('You might no registrate for this activity.');
+	        		}else if(errorCode==3){
+	        			showSysMessage('This activity occurs in the past.');
+	        		}else{ //no binding account
+	        			location.href='login.html?openUserID='+openUserID+'&originalPage='+location.href;
+	        		}
+	        	}
+	        }
+		});
+	}
+	function loadEventInfo(){
+		$.ajax({
+	        url:  '../service/event/'+getParameter('eventId'),
+	        type: 'GET',
+	        success: function (json) {
+	        	if(json && json.success){
+	        		activity=json.data;
+	        		//event info
+	        		$("#eventName").html(activity.eventName);
+	        		$("#eventDescription").html(activity.eventDescription);
+	        		activity.location? $("#eventLocation").html(activity.location): $("#eventLocation").parent().hide();
+	        		activity.presenter? $("#presenter").html(activity.presenter): $("#presenter").parent().hide();
+	        		//event schedule
+			   		if(activity.schedulers){
+						var shceduleHtml='';
+				   		var scheduleTemplate=$("#event-schedule-template").html();
+				   		var agendaTemplate=$(".schedule-locations").html();
+				   		for(var i=0;i<activity.schedulers.length;i++){
+				   			var schedule=activity.schedulers[i];
+				   			var agendas=schedule.agendas;
+				   			var agendaHtml='';
+				   			if(agendas){
+				   				agendas=agendas.filter(function(element, index, array){
+				   					return array.indexOf(element);
+				   				});
+				    			for(var idx=0;idx<agendas.length;idx++){
+				    				agendaHtml+=agendaTemplate.replace(/{eventId}/g, activity.id).replace(/\{location\}/g, agendas[idx].location);
+				    			}
+				   			}
+				   			shceduleHtml+=scheduleTemplate
+				   				.replace(/{id}/g,schedule.id)
+				   				.replace('{scheduleTime}', formatDate(schedule.startTime)+'-'+formatDate(schedule.endTime, true))
+				   				.replace('{endTime}',schedule.endTime)
+				   				.replace(agendaTemplate, agendaHtml);
+				   		}
+				   		$("#event-schedule").html(shceduleHtml);
+				   		loadCheckInRecords();
+				   		$(".schedule-info").show();
+					}else{
+						$(".schedule-info").hide();
+					}
+	        	}else{
+	        		showSysMessage('Error occurs while loading data!');
+	        	}
+	        },
+	        error:function(data){
+	        	showSysMessage('Error occurs while loading data!');
+	        }
+		});
+	}
+	$(document).ready(function(){
+		loadEventInfo();
+		loadUserInfo();
+	});
+</script>
+</body>
+</html>

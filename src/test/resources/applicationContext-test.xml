@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:mongo="http://www.springframework.org/schema/data/mongo"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+       http://www.springframework.org/schema/data/mongo http://www.springframework.org/schema/data/mongo/spring-mongo.xsd
+       http://www.springframework.org/schema/util  http://www.springframework.org/schema/util/spring-util.xsd"
+       xmlns:context="http://www.springframework.org/schema/context">
+
+    <context:component-scan base-package="com.hp.cdc.km.wechat.processor" />
+
+    <context:component-scan base-package="com.hp.cdc.km.service" />
+    <context:component-scan base-package="com.hp.cdc.km.dao.mongoimpl" />
+
+
+    <bean name="loginFilter" class="com.hp.cdc.km.web.filter.LoginFilter"/>
+
+    <!-- Mongo configurations Cloud -->
+
+    <mongo:mongo host="127.0.0.1" id="mongo"/>
+    <bean id="mongoTemplate" class="org.springframework.data.mongodb.core.MongoTemplate">
+        <constructor-arg name="mongo" ref="mongo"/>
+        <constructor-arg name="databaseName" value="cdckm"/>
+
+        <property name="writeConcern">
+            <util:constant static-field="com.mongodb.WriteConcern.ACKNOWLEDGED"/>
+        </property>
+
+    </bean>
+
+
+
+    <!-- Mongo configurations local -->
+    <!-- 	<bean id="mongoTemplate" class="org.springframework.data.mongodb.core.MongoTemplate">
+         <constructor-arg name="mongoDbFactory" ref="mongoDbFactory"/>
+     </bean>
+     <mongo:db-factory id="mongoDbFactory" host="127.0.0.1" dbname="test" />
+     <mongo:repositories base-package="com.hp.cdc.km.repository" /> -->
+</beans>

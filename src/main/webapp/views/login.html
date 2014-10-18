@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="description" content="Login Page">
+    <title>Sign In</title>
+    <link href="common.css" rel="stylesheet">
+  </head>
+  <body>
+    <div id="sys-msg"></div>
+    <div class="container">
+      <form class="signIn" action="#" onsubmit="return login();">
+        <h2>Sign In</h2>
+        <input type="tel" name="employeeID" placeholder="Employee ID">
+        <input type="email" name="email" placeholder="Email address">
+        <button disabled class="disabled" type="submit">Sign In</button>
+      </form>
+    </div>
+    <script src="jquery-1.11.1.min.js"></script> 
+    <script>
+    	function checkField(){
+    		console.log('textInput');
+    		var email=$.trim($("input[type='email']").val());
+    		var valid=true;
+			if(!email || email.indexOf('@')==-1){
+				valid=false;
+			}
+			var employeeID=$.trim($("input[type='tel']").val());
+			if(!employeeID){
+				valid=false;
+			}
+			
+			if(valid){
+				$("button[type='submit']").removeClass('disabled').attr('disabled', false);
+			}else{
+				$("button[type='submit']").addClass('disabled').attr('disabled', true);
+			}
+			return valid;
+    	}
+    	function showSysMessage(message){
+    		$('#sys-msg').html(message);$('#sys-msg').fadeIn(400);
+    		setTimeout(function(){
+    			$('#sys-msg').fadeOut(400);
+    		}, 2000);
+    	}
+    	function getParameter(name){
+    		var str=location.search;
+    		var idx=str.indexOf(name);
+    		var endIdx=str.indexOf('&',idx);
+    		if(endIdx==-1){
+    			endIdx=str.length;
+    		}
+    		return str.substring(idx+name.length+1,endIdx);
+    	}
+    	function login(){
+    		if(!checkField()){
+    			showSysMessage('EmployeeID or Email is mandatory.');
+    			return false;
+    		}
+    		var openId=getParameter('openUserID');
+    		$("button[type='submit']").text('Loading...');
+    		$("button[type='submit']").addClass('disabled').attr('disabled', true);
+    		$.ajax({
+		        url:  '../service/login',
+		        type: 'POST',
+		        //async: false,
+		        data:{
+		        	empId:$.trim($("input[type='tel']").val()),
+		        	emailAddress:$.trim($("input[type='email']").val()),
+		        	openId: openId},
+		        success: function (data) {
+		        	if(data && data.success){
+		        		var originalPage=getParameter('originalPage');
+		        		location.href=originalPage;
+		        	}else{
+		        		showSysMessage('EmployeeID or Email does not match.');
+		        		$("button[type='submit']").text('Sign In');
+		        		$("button[type='submit']").removeClass('disabled').attr('disabled', false);
+		        	}
+		        },
+		        error:function(data){
+		        	showSysMessage('Login in error.');
+		        	$("button[type='submit']").text('Sign In');
+	        		$("button[type='submit']").removeClass('disabled').attr('disabled', false);
+		        }
+			});
+    		return false;
+    	}
+    	$(document).ready(function(){
+    		$("input[type='email']").keyup(checkField);
+    		$("input[type='tel']").keyup(checkField);
+    		$("input[type='email']").on('change',checkField);
+    		$("input[type='tel']").on('change',checkField);
+    	});
+    </script>
+  </body>
+</html>

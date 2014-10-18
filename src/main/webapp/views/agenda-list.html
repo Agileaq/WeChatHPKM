@@ -1,0 +1,49 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Agenda List</title>
+<link href="common.css" rel="stylesheet">
+</head>
+<body>
+<div id="sys-msg"></div>
+<div>
+	<h1>Agenda for Technology Day</h1>
+	<div id="agenda-list">
+		<div style="text-align: center;"><img src="spinning1.gif"/></div>
+	</div>
+</div>
+<script id="locationAgendaTemplate" type="text/x-jsrender">
+	<ol>
+		<li><a href="agenda.html?locationId={{:location}}">{{:name}}</a></li>
+	</ol>
+</script>
+<script src="jquery-1.11.1.min.js"></script>
+<script src="jsrender.js"></script>
+<script>
+function showSysMessage(message){
+	$('#sys-msg').html(message);$('#sys-msg').fadeIn(400);
+	setTimeout(function(){
+		$('#sys-msg').fadeOut(400);
+	}, 2000);
+}
+$(document).ready(function(){
+	$.ajax({
+        url:  '../service/agenda/list',
+        type: 'GET',
+        success: function (json) {
+        	if(json && json.success){
+        		var htmlVal=$("#locationAgendaTemplate").render(json.data);
+        		$("#agenda-list").html(htmlVal);
+        	}
+        },
+        error:function(data){
+        	showSysMessage('Could not get data from server');
+        	$("#agenda-list").html('');
+        }
+	});
+});
+</script>
+</body>
+</html>

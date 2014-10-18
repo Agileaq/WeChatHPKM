@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:mongo="http://www.springframework.org/schema/data/mongo"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+       http://www.springframework.org/schema/data/mongo http://www.springframework.org/schema/data/mongo/spring-mongo.xsd
+       http://www.springframework.org/schema/util  http://www.springframework.org/schema/util/spring-util.xsd"
+       xmlns:context="http://www.springframework.org/schema/context">
+
+    <context:component-scan base-package="com.hp.cdc.km.wechat.processor" />
+
+    <context:component-scan base-package="com.hp.cdc.km.service" />
+    <context:component-scan base-package="com.hp.cdc.km.dao.mongoimpl" />
+
+
+    <bean name="loginFilter" class="com.hp.cdc.km.web.filter.LoginFilter">
+    	<property name="excludedUrlList">
+    		<list>
+    			<value>login.html</value>
+    			<value>event-detail.html</value>
+    			<value>agenda.html</value>
+    		</list>
+    	</property>
+    </bean>
+
+
+    <mongo:mongo host="mongo.duapp.com" port="8908" id="mongo"/>
+
+    <bean id="userCredentials" class="org.springframework.data.authentication.UserCredentials">
+        <constructor-arg name="username" value="aG8Ue7b0KN5PlPU0GmhGDG89"/>
+        <constructor-arg name="password" value="r5z2b6Ep1tZQKcvRlr4muArfKXtKGrNK"/>
+    </bean>
+
+
+    <bean id="mongoTemplate" class="org.springframework.data.mongodb.core.MongoTemplate">
+        <constructor-arg name="mongo" ref="mongo"/>
+        <constructor-arg name="databaseName" value="ybquqviAFjmsORJIVRdE"/>
+        <constructor-arg name="userCredentials" ref="userCredentials"/>
+
+
+        <property name="writeConcern">
+            <util:constant static-field="com.mongodb.WriteConcern.ACKNOWLEDGED"/>
+        </property>
+
+    </bean>
+
+    <bean id="jacksonMessageConverter"
+          class="org.springframework.http.converter.json.MappingJacksonHttpMessageConverter"></bean>
+    <bean
+            class="org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter">
+        <property name="messageConverters">
+            <list>
+                <ref bean="jacksonMessageConverter" />
+            </list>
+        </property>
+    </bean>
+
+    <!-- Mongo configurations Cloud -->
+	<!--<mongo:db-factory id="mongoDbFactory" host="mongo.duapp.com" port="8908" dbname="cGLCOaraWbvMmVGfqvwZ" -->
+		<!--username="9BjycuA8lP2yGb7o2OiRtRQ7" password="RgT9nHICcAQyvzkpelxHz3ijbRtKGYmE" />-->
+	<!--<bean id="mongoTemplate" class="org.springframework.data.mongodb.core.MongoTemplate">-->
+		<!--<constructor-arg name="mongoDbFactory" ref="mongoDbFactory"/>-->
+        <!--<property name="writeConcern">-->
+            <!--<util:constant static-field="com.mongodb.WriteConcern.ACKNOWLEDGED"/>-->
+        <!--</property>-->
+	<!--</bean>-->
+	<!--<mongo:repositories base-package="com.hp.cdc.km.repository" />-->
+	
+	
+	<!-- Mongo configurations local -->
+<!-- 	<bean id="mongoTemplate" class="org.springframework.data.mongodb.core.MongoTemplate">
+		<constructor-arg name="mongoDbFactory" ref="mongoDbFactory"/>
+		<property name="writeConcern">
+            <util:constant static-field="com.mongodb.WriteConcern.ACKNOWLEDGED"/>
+        </property>
+	</bean>
+	<mongo:db-factory id="mongoDbFactory" host="127.0.0.1" dbname="cdckm" />
+	<mongo:repositories base-package="com.hp.cdc.km.repository" /> -->
+</beans>
